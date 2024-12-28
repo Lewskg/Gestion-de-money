@@ -1,1 +1,275 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Dinero</title>
+    <style>
+        /* Agregar algunos estilos básicos */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+
+        table {
+            width: 100%;
+            margin: 20px 0;
+            border-collapse: collapse;
+        }
+
+        table, th, td {
+            border: 1px solid #ccc;
+        }
+
+        th, td {
+            padding: 8px;
+            text-align: left;
+        }
+
+        .green-btn {
+            background-color: green;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .red-btn {
+            background-color: red;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            cursor: pointer;
+        }
+
+        .form-container {
+            margin: 20px 0;
+        }
+
+        #reloj {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-align: center;
+            background: #222;
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="reloj"></div>
+
+    <h1>Gestión de Dinero</h1>
+
+    <div class="form-container">
+        <h2>Plata Ahorrada</h2>
+        <label for="solesAdd">Agregar Soles:</label>
+        <input type="number" id="solesAdd" value="0">
+        <button class="green-btn" onclick="agregarSoles()">Agregar Soles</button>
+
+        <label for="dolaresAdd">Agregar Dólares:</label>
+        <input type="number" id="dolaresAdd" value="0">
+        <button class="green-btn" onclick="agregarDolares()">Agregar Dólares</button>
+
+        <div>
+            <p id="solesAcumulados">Soles acumulados: 0.00</p>
+            <p id="dolaresAcumulados">Dólares acumulados: 0.00</p>
+        </div>
+    </div>
+
+    <div class="form-container">
+        <h2>Plata por Cobrar</h2>
+        <label for="nuevaFecha">Fecha de Cobro:</label>
+        <input type="date" id="nuevaFecha">
+        <button class="green-btn" onclick="agregarFechaCobro()">Agregar Fecha</button>
+
+        <h3>Listado de Fechas de Cobro</h3>
+        <table id="tablaCobrar">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Estado</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody id="tablaCobrarBody"></tbody>
+        </table>
+
+        <div>
+            <label for="restarCobrado">Restar Monto Cobrado:</label>
+            <input type="number" id="restarCobrado" value="0">
+            <button class="red-btn" onclick="restarCobrado()">Restar Monto Cobrado</button>
+            <p id="totalCobrado">Total Cobrado: 0.00</p>
+        </div>
+    </div>
+
+    <div class="form-container">
+        <h2>Plata Prestada</h2>
+        <label for="nombrePrestamo">Nombre:</label>
+        <input type="text" id="nombrePrestamo" placeholder="Ingrese nombre">
+        
+        <label for="cantidadPrestamo">Cantidad:</label>
+        <input type="number" id="cantidadPrestamo" value="0">
+
+        <label for="monedaPrestamo">Moneda:</label>
+        <select id="monedaPrestamo">
+            <option value="soles">Soles</option>
+            <option value="dolares">Dólares</option>
+        </select>
+
+        <button class="green-btn" onclick="agregarPrestamo()">Agregar Prestamo</button>
+        <h3>Lista de Préstamos</h3>
+        <table id="tablaPrestamos">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Soles</th>
+                    <th>Dólares</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody id="tablaPrestamosBody"></tbody>
+        </table>
+    </div>
+
+    <script>
+        // Función para actualizar el reloj
+        function actualizarReloj() {
+            const fecha = new Date();
+            const opcionesFecha = { day: '2-digit', month: '2-digit', year: 'numeric' };
+            const opcionesHora = { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false };
+            
+            const formatoFecha = fecha.toLocaleDateString('es-PE', opcionesFecha);
+            const formatoHora = fecha.toLocaleTimeString('es-PE', opcionesHora);
+
+            document.getElementById('reloj').textContent = `Fecha: ${formatoFecha} | Hora: ${formatoHora}`;
+        }
+
+        // Actualizar el reloj cada segundo
+        setInterval(actualizarReloj, 1000);
+
+        // Funciones de gestión de dinero (las mismas que antes)
+        let totalSoles = 0;
+        let totalDolares = 0;
+        let totalCobrado = 0;
+        let prestamos = [];
+
+        function agregarSoles() {
+            let cantidad = parseFloat(document.getElementById('solesAdd').value);
+            totalSoles += cantidad;
+            document.getElementById('solesAcumulados').textContent = `Soles acumulados: ${totalSoles.toFixed(2)}`;
+            guardarDatos();
+        }
+
+        function agregarDolares() {
+            let cantidad = parseFloat(document.getElementById('dolaresAdd').value);
+            totalDolares += cantidad;
+            document.getElementById('dolaresAcumulados').textContent = `Dólares acumulados: ${totalDolares.toFixed(2)}`;
+            guardarDatos();
+        }
+
+        function agregarFechaCobro() {
+            let fecha = document.getElementById('nuevaFecha').value;
+            if (fecha) {
+                let tablaBody = document.getElementById('tablaCobrarBody');
+                let nuevaFila = document.createElement('tr');
+                nuevaFila.innerHTML = `
+                    <td>${fecha}</td>
+                    <td>Por cobrar</td>
+                    <td><button class="green-btn" onclick="marcarComoCobrado(this)">Marcar como Cobrado</button></td>
+                `;
+                tablaBody.appendChild(nuevaFila);
+                document.getElementById('nuevaFecha').value = '';  // Limpiar el input
+            }
+            guardarDatos();
+        }
+
+        function marcarComoCobrado(button) {
+            let row = button.closest('tr');
+            row.cells[1].textContent = 'Cobrado';
+            button.disabled = true;
+            totalCobrado += 560;
+            document.getElementById('totalCobrado').textContent = `Total Cobrado: ${totalCobrado.toFixed(2)}`;
+            guardarDatos();
+        }
+
+        function restarCobrado() {
+            let cantidad = parseFloat(document.getElementById('restarCobrado').value);
+            totalCobrado -= cantidad;
+            document.getElementById('totalCobrado').textContent = `Total Cobrado: ${totalCobrado.toFixed(2)}`;
+            guardarDatos();
+        }
+
+        function agregarPrestamo() {
+            let nombre = document.getElementById('nombrePrestamo').value;
+            let cantidad = parseFloat(document.getElementById('cantidadPrestamo').value);
+            let moneda = document.getElementById('monedaPrestamo').value;
+            let index = prestamos.findIndex(p => p.nombre === nombre);
+
+            if (index !== -1) {
+                prestamos[index][moneda] += cantidad;
+            } else {
+                prestamos.push({ nombre, soles: 0, dolares: 0, [moneda]: cantidad });
+            }
+            
+            actualizarTablaPrestamos();
+            guardarDatos();
+        }
+
+        function actualizarTablaPrestamos() {
+            let tablaBody = document.getElementById('tablaPrestamosBody');
+            tablaBody.innerHTML = '';
+            prestamos.forEach(p => {
+                if (p.soles === 0 && p.dolares === 0) return;
+                let row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${p.nombre}</td>
+                    <td>${p.soles.toFixed(2)}</td>
+                    <td>${p.dolares.toFixed(2)}</td>
+                    <td><button class="red-btn" onclick="eliminarPrestamo('${p.nombre}')">Eliminar</button></td>
+                `;
+                tablaBody.appendChild(row);
+            });
+        }
+
+        function eliminarPrestamo(nombre) {
+            prestamos = prestamos.filter(p => p.nombre !== nombre);
+            actualizarTablaPrestamos();
+            guardarDatos();
+        }
+
+        function guardarDatos() {
+            localStorage.setItem('plataAhorrada', JSON.stringify({ soles: totalSoles, dolares: totalDolares }));
+            localStorage.setItem('plataCobrar', totalCobrado);
+            localStorage.setItem('prestamos', JSON.stringify(prestamos));
+        }
+
+        function cargarDatos() {
+            let plataAhorrada = JSON.parse(localStorage.getItem('plataAhorrada'));
+            if (plataAhorrada) {
+                totalSoles = plataAhorrada.soles;
+                totalDolares = plataAhorrada.dolares;
+                document.getElementById('solesAcumulados').textContent = `Soles acumulados: ${totalSoles.toFixed(2)}`;
+                document.getElementById('dolaresAcumulados').textContent = `Dólares acumulados: ${totalDolares.toFixed(2)}`;
+            }
+
+            totalCobrado = parseFloat(localStorage.getItem('plataCobrar')) || 0;
+            document.getElementById('totalCobrado').textContent = `Total Cobrado: ${totalCobrado.toFixed(2)}`;
+
+            let datosPrestamos = JSON.parse(localStorage.getItem('prestamos'));
+            if (datosPrestamos) {
+                prestamos = datosPrestamos;
+                actualizarTablaPrestamos();
+            }
+        }
+
+        window.onload = cargarDatos;
+    </script>
+</body>
+</html>
 
